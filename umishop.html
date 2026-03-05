@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Umi Shop</title>
+
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f9}
+.header{background:#2563eb;padding:15px;display:flex;align-items:center;justify-content:space-between;color:white;position:sticky;top:0;z-index:10;}
+.search-box{flex:1;margin:0 10px}
+.search-box input{width:100%;padding:10px;border-radius:8px;border:none;}
+.cart-icon{position:relative;cursor:pointer;font-size:22px;}
+.cart-count{position:absolute;top:-5px;right:-8px;background:red;color:white;font-size:12px;padding:3px 6px;border-radius:50%;}
+.marquee{background:#1e40af;color:white;padding:8px;white-space:nowrap;overflow:hidden;}
+.marquee span{display:inline-block;padding-left:100%;animation:marq 15s linear infinite;}
+@keyframes marq{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+.banner{margin:15px;background:linear-gradient(135deg,#1e40af,#2563eb);color:white;padding:25px;border-radius:15px;text-align:center;}
+.cat-wrapper{padding:0 15px 10px 15px;}
+.cat-btn{padding:8px 14px;border:none;border-radius:20px;background:#e5e7eb;cursor:pointer;font-size:13px;margin:4px;}
+.cat-btn:hover{background:#2563eb;color:white;}
+.container{padding:15px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;}
+.card{background:#fff;border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,0.08);overflow:hidden;transition:0.3s;cursor:pointer;position:relative;}
+.card:hover{transform:translateY(-5px)}
+.card img{width:100%;height:160px;object-fit:cover;}
+.badge{position:absolute;top:10px;left:10px;background:#2563eb;color:white;padding:5px 10px;font-size:11px;border-radius:8px;}
+.card-body{padding:12px}
+.rating{font-size:13px;color:#f59e0b}
+.old-price{text-decoration:line-through;color:#999;font-size:13px}
+.price{color:#2563eb;font-weight:bold;font-size:18px}
+.desc{font-size:12px;color:#666;margin-top:4px}
+.cart-btn{margin-top:8px;background:#eef2ff;padding:8px;text-align:center;border-radius:10px;cursor:pointer;}
+.cart-btn:hover{background:#2563eb;color:white;}
+.toast{position:fixed;bottom:20px;right:20px;background:#2563eb;color:white;padding:10px 15px;border-radius:8px;display:none;}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:center;}
+.modal-content{background:white;width:90%;max-width:400px;padding:15px;border-radius:12px;max-height:80%;overflow:auto;}
+.footer{background:#1e40af;color:white;text-align:center;padding:20px;margin-top:30px;font-size:14px;}
+input,select,textarea{width:100%;padding:8px;margin:5px 0;border-radius:6px;border:1px solid #ddd;}
+</style>
+</head>
+<body>
+
+<div class="header">
+<div>US</div>
+<div class="search-box">
+<input type="text" id="search" placeholder="Cari produk YSL">
+</div>
+<div class="cart-icon" onclick="openCart()">
+🛒 <span class="cart-count" id="cartCount">0</span>
+</div>
+</div>
+
+<div class="marquee">
+<span>🔥 PROMO YSL TRENDING! Diskon hingga 30% + Gratis Gift Eksklusif 🔥</span>
+</div>
+
+<div class="banner">
+<h2>YSL Trending Collection</h2>
+<p>Dapatkan produk YSL original dengan harga terbaik minggu ini</p>
+</div>
+
+<div class="cat-wrapper">
+<button onclick="filterCategory('all')" class="cat-btn">Semua</button>
+<button onclick="filterCategory('parfum')" class="cat-btn">Parfum</button>
+<button onclick="filterCategory('makeup')" class="cat-btn">Makeup</button>
+<button onclick="filterCategory('tas')" class="cat-btn">Tas</button>
+<button onclick="filterCategory('skincare')" class="cat-btn">Skincare</button>
+</div>
+
+<div class="container" id="productList"></div>
+<div class="toast" id="toast">Ditambahkan ke keranjang</div>
+
+<!-- MODAL DETAIL -->
+<div class="modal" id="detailModal">
+<div class="modal-content" id="detailContent"></div>
+</div>
+
+<!-- MODAL KERANJANG -->
+<div class="modal" id="cartModal">
+<div class="modal-content">
+<h3>Keranjang</h3>
+<div id="cartItems"></div>
+<hr>
+
+<label>Metode Pembayaran:</label>
+<select id="paymentMethod">
+<option>Transfer Bank</option>
+<option>COD</option>
+<option>E-Wallet</option>
+</select>
+
+<label>Pilih Ekspedisi:</label>
+<select id="shippingMethod" onchange="updateOngkir()">
+<option value="JNE">JNE (Rp 20.000)</option>
+<option value="J&T">J&T (Rp 18.000)</option>
+<option value="SiCepat">SiCepat (Rp 15.000)</option>
+</select>
+
+<p id="ongkirText">Ongkir: Rp 20.000</p>
+
+<label>Nama Pembeli:</label>
+<input type="text" id="buyerName">
+
+<label>No HP:</label>
+<input type="text" id="buyerPhone">
+
+<label>Alamat Lengkap:</label>
+<textarea id="buyerAddress"></textarea>
+
+<br>
+<button onclick="checkoutWA()" style="background:#25D366;color:white;padding:10px;border:none;border-radius:8px;width:100%;">
+Pesan via WhatsApp
+</button>
+<br><br>
+<button onclick="closeCart()">Tutup</button>
+</div>
+</div>
+
+<div class="footer">
+<p>Umi Shop menyediakan produk YSL original kualitas premium.</p>
+<p>Hubungi kami via WhatsApp untuk pemesanan dan informasi lebih lanjut.</p>
+<p>© 2026 Umi Shop. All Rights Reserved.</p>
+</div>
+
+<script>
+
+
+let products = [
+{ id:1, name:"Yves Saint Laurent Black Opium Eau de Parfum Glitter", desc:"Parfum wanita elegan.", price:2000000, old:2840000, rating:4.9, img:"glitter.jpeg", category:"parfum" },
+{ id:2, name:"Yves Saint Laurent Touche Eclat Glow Pact Cushion", desc:"Makeup flawless.", price:7000000, old:8500000, rating:4.8, img:"pact cushion.jpeg", category:"makeup" },
+{ id:3, name:"Yves Saint Laurent The Inks Vinyl Cream", desc:"Bibir terlihat indah.", price:6800000, old:8200000, rating:4.7, img:"inks viny.jpeg", category:"makeup" },
+{ id:4, name:"Yves Saint Laurent Make Me Blush Bold Blurring Blush", desc:"Seperti orang di butterfly era.", price:4500000, old:6000000, rating:4.8, img:"blurring blush.jpeg", category:"makeup" },
+{ id:5, name:"Yves Saint Laurent Loveshine Candy Glaze", desc:"Terlihat menggoda.", price:4800000, old:6200000, rating:4.7, img:"love shine.jpeg", category:"makeup" },
+{ id:6, name:"Yves Saint Laurent All Hours Glow Foundation", desc:"Foundation flawless.", price:7500000, old:9000000, rating:4.9, img:"glow foundi.jpeg", category:"makeup" },
+{ id:7, name:"Yves Saint Laurent The Inks Blur", desc:"Full coverage.", price:7700000, old:9200000, rating:4.8, img:"inks blur.jpeg", category:"makeup" },
+{ id:8, name:"Yves Saint Laurent Le Cushion Encre De Peau", desc:"Iconic.", price:5200000, old:6500000, rating:4.9, img:"cushion.jpeg", category:"makeup" },
+{ id:9, name:"Yves Saint Laurent All Hours Hyper Blur Loose Powder", desc:"Looks match.", price:4300000, old:5500000, rating:4.6, img:"loose powder.jpeg", category:"makeup" },
+{ id:10, name:"Yves Saint Laurent Babydoll Kiss & Blush Lipgloss 10 ml", desc:"Kissable.", price:3900000, old:5000000, rating:4.5, img:"babydoll.jpeg", category:"makeup" },
+{ id:11, name:"Yves Saint Laurent Touche Eclat Blur Primer 30ml", desc:"Bersinar.", price:7200000, old:8800000, rating:4.9, img:"primer.jpeg", category:"makeup" },
+{ id:12, name:"Yves Saint Laurent MYSLF L'Absolu", desc:"Aroma kuat.", price:7500000, old:9000000, rating:4.8, img:"myslf.jpeg", category:"parfum" },
+{ id:13, name:"Mon Paris Floral Perfume 1.6 oz EDP Spay for Women", desc:"Tahan seharian.", price:5300000, old:6800000, rating:4.7, img:"spray.jpeg", category:"parfum" },
+{ id:14, name:"Saint Laurent Medium Envelope Shoulder Bag - Black", desc:"Fashionable.", price:5100000, old:6500000, rating:4.7, img:"envelope.jpeg", category:"tas" },
+{ id:15, name:"Mini Voltaire Bag", desc:"Fancy.", price:8900000, old:11000000, rating:4.9, img:"voltaire.jpeg", category:"tas" },
+{ id:16, name:"Saint Laurent Mini Lou Quilted Leather Black Shw - [VOI-70003-29583]", desc:"Wow emezing.", price:6000000, old:7500000, rating:4.6, img:"leather.jpeg", category:"tas" },
+{ id:17, name:"Yves Saint Laurent Top Secrets Glow Perfecting Mist Setting Spray 100ml", desc:"Makeup tahan lama.", price:5800000, old:7200000, rating:4.6, img:"setting.jpeg", category:"skincare" },
+{ id:18, name:"Yves Saint Laurent Couture Mini Clutch Eyeshadow", desc:"Mata terlihat indah.", price:5500000, old:7000000, rating:4.5, img:"eyeshadow.jpeg", category:"makeup" },
+{ id:19, name:"Yves Saint Laurent Mascara Volume Effet Faux Cils Waterproof", desc:"Hitam pekat.", price:3500000, old:4500000, rating:4.7, img:"maskara.jpeg", category:"makeup" },
+{ id:20, name:"Yves Saint Laurent Gloss volupte #208 fauve 211651 6ml/0.2oz", desc:"Mini favorit.", price:3600000, old:4800000, rating:4.7, img:"gloss.jpeg", category:"makeup" },
+{ id:21, name:"Yves Saint Laurent Or Rouge Anti-Aging Serum 30ml", desc:"Limited edition.", price:12000000, old:15000000, rating:5.0, img:"serum.jpeg", category:"skincare" },
+{ id:22, name:"Yves Saint Laurent Or Rouge Creme Riche", desc:"Paket lengkap.", price:12500000, old:15500000, rating:5.0, img:"creme.jpeg", category:"skincare" },
+{ id:23, name:"SHOULDER BAG - Saint Laurent - Woman", desc:"Fashionable.", price:4200000, old:5500000, rating:4.6, img:"shoulder.jpeg", category:"tas" },
+{ id:24, name:"Women's Saint Laurent SL M119 BLAZE", desc:"intinya kacamata.", price:4700000, old:6000000, rating:4.8, img:"blaze.jpeg", category:"tas" },
+{ id:25, name:"Saint Laurent Medium Niki Leather Shoulder Bag - Brown", desc:"Special release.", price:13500000, old:17000000, rating:5.0, img:"brown.jpeg", category:"tas" }
+];
+
+/* ================= SISTEM ================= */
+
+let cart=[];
+let ongkir=20000;
+
+function renderProducts(data){
+const container=document.getElementById("productList");
+container.innerHTML="";
+data.forEach(p=>{
+container.innerHTML+=`
+<div class="card" onclick="showDetail(${p.id})">
+<div class="badge">-${Math.round((1 - p.price/p.old)*100)}%</div>
+<img src="${p.img}">
+<div class="card-body">
+<div class="rating">⭐ ${p.rating}</div>
+<h4>${p.name}</h4>
+<div class="old-price">Rp ${p.old.toLocaleString()}</div>
+<div class="price">Rp ${p.price.toLocaleString()}</div>
+<div class="desc">${p.desc}</div>
+<div class="cart-btn" onclick="event.stopPropagation(); addToCart(${p.id})">
+Tambah ke Keranjang
+</div>
+</div>
+</div>
+`;
+});
+}
+
+document.getElementById("search").addEventListener("input",function(){
+let keyword=this.value.toLowerCase();
+renderProducts(products.filter(p=>p.name.toLowerCase().includes(keyword)));
+});
+
+function filterCategory(cat){
+if(cat==="all"){renderProducts(products);}
+else{renderProducts(products.filter(p=>p.category===cat));}
+}
+
+function showDetail(id){
+let p=products.find(x=>x.id===id);
+document.getElementById("detailContent").innerHTML=`
+<h3>${p.name}</h3>
+<img src="${p.img}" style="width:100%;border-radius:10px">
+<p>${p.desc}</p>
+<p>Rating ⭐ ${p.rating}</p>
+<p><s>Rp ${p.old.toLocaleString()}</s></p>
+<h3>Rp ${p.price.toLocaleString()}</h3>
+<button onclick="addToCart(${p.id})">Tambah ke Keranjang</button>
+<button onclick="closeDetail()">Tutup</button>
+`;
+document.getElementById("detailModal").style.display="flex";
+}
+
+function closeDetail(){document.getElementById("detailModal").style.display="none";}
+
+function addToCart(id){
+let product=products.find(p=>p.id===id);
+cart.push(product);
+document.getElementById("cartCount").innerText=cart.length;
+let toast=document.getElementById("toast");
+toast.style.display="block";
+setTimeout(()=>toast.style.display="none",1500);
+}
+
+function openCart(){renderCart();document.getElementById("cartModal").style.display="flex";}
+function closeCart(){document.getElementById("cartModal").style.display="none";}
+
+function renderCart(){
+let container=document.getElementById("cartItems");
+if(cart.length===0){container.innerHTML="<p>Keranjang kosong</p>";return;}
+container.innerHTML="";
+cart.forEach((item,index)=>{
+container.innerHTML+=`
+<div style="margin-bottom:10px;border-bottom:1px solid #ddd;padding-bottom:5px;">
+<input type="checkbox" id="item${index}" checked>
+<b>${item.name}</b><br>
+Rp ${item.price.toLocaleString()}
+<button onclick="removeItem(${index})" style="float:right;background:red;color:white;border:none;border-radius:5px;padding:3px 6px;">Hapus</button>
+</div>`;
+});
+}
+
+function removeItem(index){cart.splice(index,1);document.getElementById("cartCount").innerText=cart.length;renderCart();}
+
+function updateOngkir(){
+let ekspedisi=document.getElementById("shippingMethod").value;
+if(ekspedisi==="JNE") ongkir=20000;
+if(ekspedisi==="J&T") ongkir=18000;
+if(ekspedisi==="SiCepat") ongkir=15000;
+document.getElementById("ongkirText").innerText="Ongkir: Rp "+ongkir.toLocaleString();
+}
+
+function checkoutWA(){
+
+let now=new Date();
+let tanggal=now.toLocaleDateString("id-ID");
+let jam=now.toLocaleTimeString("id-ID");
+let kode="US"+now.getTime().toString().slice(-6);
+
+let payment=document.getElementById("paymentMethod").value;
+let shipping=document.getElementById("shippingMethod").value;
+
+let nama=document.getElementById("buyerName").value;
+let hp=document.getElementById("buyerPhone").value;
+let alamat=document.getElementById("buyerAddress").value;
+
+if(nama===""||hp===""||alamat===""){alert("Lengkapi data pembeli dulu!");return;}
+
+let message=`Halo Umi Shop,%0A`;
+message+=`Kode Pesanan: ${kode}%0A`;
+message+=`Tanggal: ${tanggal}%0A`;
+message+=`Jam: ${jam}%0A%0A`;
+message+=`Nama: ${nama}%0AHP: ${hp}%0AAlamat: ${alamat}%0A%0A`;
+
+let totalHarga=0,totalBarang=0;
+
+cart.forEach((p,i)=>{
+let check=document.getElementById("item"+i);
+if(check&&check.checked){
+message+=`- ${p.name}%0ARp ${p.price.toLocaleString()}%0A%0A`;
+totalHarga+=p.price;
+totalBarang++;
+}
+});
+
+if(totalBarang===0){alert("Pilih produk dulu!");return;}
+
+let grandTotal=totalHarga+ongkir;
+
+message+=`Jumlah Barang: ${totalBarang}%0A`;
+message+=`Subtotal: Rp ${totalHarga.toLocaleString()}%0A`;
+message+=`Ongkir (${shipping}): Rp ${ongkir.toLocaleString()}%0A`;
+message+=`Metode Bayar: ${payment}%0A`;
+message+=`TOTAL BAYAR: Rp ${grandTotal.toLocaleString()}`;
+
+window.open("https://wa.me/6289518001628?text="+message,"_blank");
+
+cart=[];
+document.getElementById("cartCount").innerText=0;
+closeCart();
+}
+
+renderProducts(products);
+
+</script>
+
+</body>
+</html>
